@@ -28,10 +28,10 @@ func (g Genotype) Complement() Genotype {
     return first.comp() | (second.comp() << 3)
 }
 
-func (g Genotype) ReverseComplement() Genotype {
+func (g Genotype) Reverse() Genotype {
     first := g & 0x7
     second := (g & 0x38) >> 3
-    return (first.comp() << 3) | second.comp()
+    return (first << 3) | second
 }
 
 func (g Genotype) comp() Genotype {
