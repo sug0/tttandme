@@ -10,7 +10,6 @@ import (
 
 type genomeNoMemory struct {
     m    mmap.MMap
-    f    *os.File
     rsid map[string]uint64
     y    uint8
 }
@@ -27,14 +26,13 @@ func (g *genomeNoMemory) Open(filename string) error {
     if err != nil {
         return err
     }
+    defer f.Close()
 
     m, err := mmap.Map(f, mmap.RDONLY, 0)
     if err != nil {
         f.Close()
         return err
     }
-
-    g.f = f
     g.m = m
 
     return nil
@@ -144,9 +142,5 @@ func (g *genomeNoMemory) HasY() bool {
 
 func (g *genomeNoMemory) Close() error {
     g.rsid = nil // GC map
-    if err := g.m.Unmap(); err != nil {
-        g.f.Close()
-        return err
-    }
-    return g.f.Close()
+    return g.m.Unmap()
 }
