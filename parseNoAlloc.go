@@ -2,16 +2,22 @@ package tttandme
 
 import (
     "os"
+    "fmt"
     "bytes"
     "strconv"
+    "reflect"
+    "unsafe"
 
     "github.com/edsrzf/mmap-go"
 )
 
 type genomeNoMemory struct {
-    m    mmap.MMap
-    rsid map[string]uint64
-    y    uint8
+    m         mmap.MMap
+    y         uint8
+    idSmallI  map[uint64]uint64
+    idSmallRS map[uint64]uint64
+    idLargeI  map[string]uint64
+    idLargeRS map[string]uint64
 }
 
 // This parser won't keep the parsed contents in memory.
@@ -40,8 +46,7 @@ func (g *genomeNoMemory) Open(filename string) error {
 
 func (g *genomeNoMemory) Parse() (Genome, error) {
     g.y = 0
-
-    rsid := make(map[string]uint64)
+    g.initMaps()
     lim := uint64(len(g.m))
 
     for i := uint64(0); i < lim; {
@@ -64,19 +69,18 @@ func (g *genomeNoMemory) Parse() (Genome, error) {
         // find tab and save in rsid map
         iTab := consume('\t', i, g.m)
         id := string(g.m[i:iTab])
-        rsid[id] = iTab+1
+        g.setRSID(id, iTab+1)
 
         i = iNewline + 1
     }
 
     g.y++
-    g.rsid = rsid
 
     return g, nil
 }
 
 func (g *genomeNoMemory) RSID(id string) *SNP {
-    i, ok := g.rsid[id]
+    i, ok := g.getRSID(id)
     if !ok {
         return nil
     }
@@ -128,8 +132,23 @@ func (g *genomeNoMemory) RSID(id string) *SNP {
 }
 
 func (g *genomeNoMemory) Iter(f func(string) bool) bool {
-    for id := range g.rsid {
+    for id := range g.idLargeI {
         if !f(id) {
+            return false
+        }
+    }
+    for id := range g.idLargeRS {
+        if !f(id) {
+            return false
+        }
+    }
+    for id := range g.idSmallI {
+        if !f(fmt.Sprintf("i%d", id)) {
+            return false
+        }
+    }
+    for id := range g.idSmallRS {
+        if !f(fmt.Sprintf("i%d", id)) {
             return false
         }
     }
@@ -141,6 +160,90 @@ func (g *genomeNoMemory) HasY() bool {
 }
 
 func (g *genomeNoMemory) Close() error {
-    g.rsid = nil // GC map
+    g.freeMaps()
     return g.m.Unmap()
+}
+
+func (g *genomeNoMemory) initMaps() {
+    g.idSmallI = make(map[uint64]uint64)
+    g.idSmallRS = make(map[uint64]uint64)
+    g.idLargeI = make(map[string]uint64)
+    g.idLargeRS = make(map[string]uint64)
+}
+
+func (g *genomeNoMemory) freeMaps() {
+    g.idSmallI = nil
+    g.idSmallRS = nil
+    g.idLargeI = nil
+    g.idLargeRS = nil
+}
+
+func (g *genomeNoMemory) getRSID(rsid string) (i uint64, ok bool) {
+    switch {
+    case rsid[0] == 'r' || rsid[0] == 'R':
+        rsid = rsid[2:]
+        if len(rsid) > 8 {
+            i, ok = g.idLargeRS[rsid]
+            return
+        }
+        key := getRSIDKey(&rsid)
+        i, ok = g.idSmallRS[key]
+    case rsid[0] == 'i' || rsid[0] == 'I':
+        rsid = rsid[1:]
+        if len(rsid) > 8 {
+            i, ok = g.idLargeI[rsid]
+            return
+        }
+        key := getRSIDKey(&rsid)
+        i, ok = g.idSmallI[key]
+    }
+    return
+}
+
+func (g *genomeNoMemory) setRSID(rsid string, i uint64) {
+    switch {
+    case rsid[0] == 'r' || rsid[0] == 'R':
+        rsid = rsid[2:]
+        if len(rsid) > 8 {
+            g.idLargeRS[rsid] = i
+            return
+        }
+        key := getRSIDKey(&rsid)
+        g.idSmallRS[key] = i
+    case rsid[0] == 'i' || rsid[0] == 'I':
+        rsid = rsid[1:]
+        if len(rsid) > 8 {
+            g.idLargeI[rsid] = i
+            return
+        }
+        key := getRSIDKey(&rsid)
+        g.idSmallI[key] = i
+    }
+}
+
+func getRSIDKey(rsid *string) uint64 {
+    s := (*reflect.StringHeader)(unsafe.Pointer(rsid))
+    key := (*uint64)(unsafe.Pointer(s.Data))
+
+    // remove memory garbage
+    switch s.Len {
+    default:
+        return 0
+    case 1:
+        return *key & 0xff
+    case 2:
+        return *key & 0xffff
+    case 3:
+        return *key & 0xffffff
+    case 4:
+        return *key & 0xffffffff
+    case 5:
+        return *key & 0xffffffffff
+    case 6:
+        return *key & 0xffffffffffff
+    case 7:
+        return *key & 0xffffffffffffff
+    case 8:
+        return *key & 0xffffffffffffffff
+    }
 }
