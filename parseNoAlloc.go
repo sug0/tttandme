@@ -68,7 +68,7 @@ func (g *genomeNoMemory) Parse() (Genome, error) {
 
         // find tab and save in rsid map
         iTab := consume('\t', i, g.m)
-        id := string(g.m[i:iTab])
+        id := toString(g.m[i:iTab])
         g.setRSID(id, iTab+1)
 
         i = iNewline + 1
@@ -91,9 +91,9 @@ func (g *genomeNoMemory) RSID(id string) *SNP {
     iNewline := consume('\n', iTabGen+1, g.m)
 
     // retrieve tokens
-    _chrxm := string(g.m[i:iTabPos])
-    _pos := string(g.m[iTabPos+1:iTabGen])
-    _genotp := string(g.m[iTabGen+1:iNewline])
+    _chrxm := toString(g.m[i:iTabPos])
+    _pos := toString(g.m[iTabPos+1:iTabGen])
+    _genotp := toString(g.m[iTabGen+1:iNewline])
 
     // convert chromossome
     var chrxm Chromosome
@@ -246,4 +246,12 @@ func getRSIDKey(rsid *string) uint64 {
     case 8:
         return *key & 0xffffffffffffffff
     }
+}
+
+func toString(s mmap.MMap) string {
+    sh := reflect.StringHeader{
+        Data: uintptr(unsafe.Pointer(&s[0])),
+        Len: len(s),
+    }
+    return *(*string)(unsafe.Pointer(&sh))
 }
