@@ -127,7 +127,7 @@ func (g *genomeNoMemory) RSID(id string) *SNP {
     return &SNP{
         Chromosome: chrxm,
         Position: pos,
-        Genotype: GenotypeStr(_genotp),
+        Genotype: Geno(_genotp),
     }
 }
 

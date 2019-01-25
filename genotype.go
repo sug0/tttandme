@@ -1,8 +1,6 @@
 package tttandme
 
-import "fmt"
-
-func GenotypeStr(genotype string) Genotype {
+func Geno(genotype string) Genotype {
     genotp := nucleobases[genotype[0]]
 
     if len(genotype) > 1 {
@@ -13,13 +11,13 @@ func GenotypeStr(genotype string) Genotype {
 }
 
 func (g Genotype) String() string {
-    if g == 0 {
+    if g == BASE_NONE {
         return "--"
     }
     if g0 := (g & 0x38) >> 3; g0 != 0 {
-        return fmt.Sprintf("%c%c", baseStr[g & 0x7], baseStr[g0])
+        return baseStr[g & 0x7] + baseStr[g0]
     }
-    return string(baseStr[g & 0x7])
+    return baseStr[g & 0x7]
 }
 
 func (g Genotype) Complement() Genotype {
@@ -62,12 +60,12 @@ var nucleobases = map[byte]Genotype{
     'I': BASE_I,
 }
 
-var baseStr = map[Genotype]byte{
-    BASE_NONE: '-',
-    BASE_A: 'A',
-    BASE_G: 'G',
-    BASE_C: 'C',
-    BASE_T: 'T',
-    BASE_D: 'D',
-    BASE_I: 'I',
+var baseStr = map[Genotype]string{
+    BASE_NONE: "-",
+    BASE_A: "A",
+    BASE_G: "G",
+    BASE_C: "C",
+    BASE_T: "T",
+    BASE_D: "D",
+    BASE_I: "I",
 }

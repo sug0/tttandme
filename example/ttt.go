@@ -44,7 +44,7 @@ func main() {
     }
     dep := snpDep.Genotype.Complement()
 
-    if dep == tttandme.GenotypeStr("AA") {
+    if dep == tttandme.Geno("AA") {
         smoke = "addicted"
     } else {
         smoke = "not addicted"
@@ -61,11 +61,11 @@ func main() {
     switch {
     default:
         fmt.Println("Unable to determine")
-    case geno == tttandme.GenotypeStr("CC"):
+    case geno == tttandme.Geno("CC"):
         fmt.Println(sex, "is likely", smoke, "and doesn't smoke much if a smoker")
-    case geno == tttandme.GenotypeStr("CT"):
+    case geno == tttandme.Geno("CT"):
         fmt.Println(sex, "is likely", smoke, "and has 1.3x increased risk of lung cancer")
-    case geno == tttandme.GenotypeStr("TT"):
+    case geno == tttandme.Geno("TT"):
         fmt.Println(sex, "is likely", smoke, "and has 1.8x increased risk of lung cancer")
     }
 }
