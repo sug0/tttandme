@@ -29,8 +29,11 @@ func (g Genotype) Complement() Genotype {
 }
 
 func (g Genotype) Reverse() Genotype {
-    first := g & 0x7
     second := (g & 0x38) >> 3
+    if second == BASE_NONE {
+        return g
+    }
+    first := g & 0x7
     return (first << 3) | second
 }
 
