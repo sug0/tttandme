@@ -244,7 +244,7 @@ func getRSIDKey(rsid *string) uint64 {
     case 7:
         return *key & 0xffffffffffffff
     case 8:
-        return *key & 0xffffffffffffffff
+        return *key
     }
 }
 
