@@ -3,6 +3,8 @@ package tttandme
 import (
     "os/exec"
     "io/ioutil"
+    "strings"
+    "errors"
 )
 
 type parserXZ struct {
@@ -20,11 +22,15 @@ func (pXZ *parserXZ) Open(filename string) error {
     }
     defer f.Close()
 
+    var sb strings.Builder
+
     xz := exec.Command("xz", "-c", "-d", filename)
     xz.Stdout = f
+    xz.Stderr = &sb
     err = xz.Run()
     if err != nil {
-        return err
+        s := sb.String()
+        return errors.New(s[:len(s)-1])
     }
 
     return pXZ.p.Open(f.Name())
