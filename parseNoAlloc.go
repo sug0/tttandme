@@ -11,11 +11,16 @@ import (
     "github.com/edsrzf/mmap-go"
 )
 
+const (
+    numMaps    = 24
+    partsBound = 0x10000000000000000 / numMaps
+)
+
 type genomeNoMemory struct {
     m         mmap.MMap
     y         uint8
-    idSmallI  map[uint64]uint64
-    idSmallRS map[uint64]uint64
+    idSmallI  []map[uint64]uint64
+    idSmallRS []map[uint64]uint64
     idLargeI  map[string]uint64
     idLargeRS map[string]uint64
 }
@@ -142,14 +147,18 @@ func (g *genomeNoMemory) Iter(f func(string) bool) bool {
             return false
         }
     }
-    for id := range g.idSmallI {
-        if !f(fmt.Sprintf("i%d", id)) {
-            return false
+    for i := 0; i < numMaps; i++ {
+        for id := range g.idSmallI[i] {
+            if !f(fmt.Sprintf("i%d", id)) {
+                return false
+            }
         }
     }
-    for id := range g.idSmallRS {
-        if !f(fmt.Sprintf("i%d", id)) {
-            return false
+    for i := 0; i < numMaps; i++ {
+        for id := range g.idSmallRS[i] {
+            if !f(fmt.Sprintf("i%d", id)) {
+                return false
+            }
         }
     }
     return true
@@ -165,8 +174,12 @@ func (g *genomeNoMemory) Close() error {
 }
 
 func (g *genomeNoMemory) initMaps() {
-    g.idSmallI = make(map[uint64]uint64)
-    g.idSmallRS = make(map[uint64]uint64)
+    g.idSmallI = make([]map[uint64]uint64, numMaps)
+    g.idSmallRS = make([]map[uint64]uint64, numMaps)
+    for i := 0; i < numMaps; i++ {
+        g.idSmallI[i] = make(map[uint64]uint64)
+        g.idSmallRS[i] = make(map[uint64]uint64)
+    }
     g.idLargeI = make(map[string]uint64)
     g.idLargeRS = make(map[string]uint64)
 }
@@ -187,7 +200,7 @@ func (g *genomeNoMemory) getRSID(rsid string) (i uint64, ok bool) {
             return
         }
         key := getRSIDKey(&rsid)
-        i, ok = g.idSmallRS[key]
+        i, ok = g.idSmallRS[mapId(key)][key]
     case rsid[0] == 'i' || rsid[0] == 'I':
         rsid = rsid[1:]
         if len(rsid) > 8 {
@@ -195,7 +208,7 @@ func (g *genomeNoMemory) getRSID(rsid string) (i uint64, ok bool) {
             return
         }
         key := getRSIDKey(&rsid)
-        i, ok = g.idSmallI[key]
+        i, ok = g.idSmallI[mapId(key)][key]
     }
     return
 }
@@ -209,7 +222,7 @@ func (g *genomeNoMemory) setRSID(rsid string, i uint64) {
             return
         }
         key := getRSIDKey(&rsid)
-        g.idSmallRS[key] = i
+        g.idSmallRS[mapId(key)][key] = i
     case rsid[0] == 'i' || rsid[0] == 'I':
         rsid = rsid[1:]
         if len(rsid) > 8 {
@@ -217,7 +230,7 @@ func (g *genomeNoMemory) setRSID(rsid string, i uint64) {
             return
         }
         key := getRSIDKey(&rsid)
-        g.idSmallI[key] = i
+        g.idSmallI[mapId(key)][key] = i
     }
 }
 
@@ -246,6 +259,10 @@ func getRSIDKey(rsid *string) uint64 {
     case 8:
         return *key
     }
+}
+
+func mapId(key uint64) uint64 {
+    return key / partsBound
 }
 
 func toString(s mmap.MMap) string {
