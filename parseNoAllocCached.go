@@ -12,6 +12,7 @@ type genomeNoMemCached struct {
     cache   *freecache.Cache
 }
 
+const snpSize = unsafe.Sizeof(SNP{})
 
 func NewParserNoMemCached(size, timeoutSecs int) GenomeParser {
     return &genomeNoMemCached{
@@ -54,7 +55,7 @@ func (g *genomeNoMemCached) RSID(rsid string) *SNP {
         return nil
     }
 
-    snpUnsafe := (*[10]byte)(unsafe.Pointer(snp))
+    snpUnsafe := (*[snpSize]byte)(unsafe.Pointer(snp))
     g.cache.Set(key, (*snpUnsafe)[:], g.timeout)
 
     return snp
