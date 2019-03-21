@@ -266,9 +266,5 @@ func mapId(key uint64) uint64 {
 }
 
 func toString(s mmap.MMap) string {
-    sh := reflect.StringHeader{
-        Data: uintptr(unsafe.Pointer(&s[0])),
-        Len: len(s),
-    }
-    return *(*string)(unsafe.Pointer(&sh))
+    return *(*string)(unsafe.Pointer(&s))
 }
