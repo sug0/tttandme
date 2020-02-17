@@ -17,12 +17,12 @@ const (
 )
 
 type genomeNoMemory struct {
-    m         mmap.MMap
     y         uint8
-    idSmallI  []map[uint64]uint64
-    idSmallRS []map[uint64]uint64
     idLargeI  map[string]uint64
     idLargeRS map[string]uint64
+    idSmallI  []map[uint64]uint64
+    idSmallRS []map[uint64]uint64
+    m         mmap.MMap
 }
 
 // This parser won't keep the parsed contents in memory.
