@@ -29,13 +29,13 @@ func (p *parserCmd) Open(filename string) error {
 
     var sb strings.Builder
 
-    xz := exec.Command(p.name, replaceFilename(filename, p.args)...)
+    cmd := exec.Command(p.name, replaceFilename(filename, p.args)...)
     p.name = ""
     p.args = nil
 
-    xz.Stdout = f
-    xz.Stderr = &sb
-    err = xz.Run()
+    cmd.Stdout = f
+    cmd.Stderr = &sb
+    err = cmd.Run()
 
     if err != nil {
         return errors.New(sb.String())
