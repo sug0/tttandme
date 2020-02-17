@@ -53,9 +53,10 @@ func (p *parserCmd) Close() error {
 }
 
 func replaceFilename(filename string, args []string) []string {
-    for i := range args {
-        if args[i] == "{}" {
-            args[i] = filename
+    for i := 0; i < len(args); i++ {
+        arg := &args[i]
+        if *arg == "{}" {
+            *arg = filename
         }
     }
     return args
