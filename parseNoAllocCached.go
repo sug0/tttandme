@@ -8,8 +8,8 @@ import (
 
 type genomeNoMemCached struct {
     timeout int
-    g       genomeNoMemory
     cache   *freecache.Cache
+    g       genomeNoMemory
 }
 
 const snpSize = unsafe.Sizeof(SNP{})
