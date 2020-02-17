@@ -32,9 +32,9 @@ type Genotype uint8
 // Represents a SNP, a location in the Human genome
 // that is known to vary between individuals.
 type SNP struct {
+    Genotype   Genotype
     Chromosome Chromosome
     Position   Position
-    Genotype   Genotype
 }
 
 // Enumeration of all nucleobases.
